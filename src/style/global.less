@@ -1,0 +1,56 @@
+/* 全局样式 */
+html, body{
+    height: 100%;
+}
+
+body, div, span, header, footer, nav, section, aside, article, ul, dl, dt, dd, li, a, p, h1, h2, h3, h4,h5, h6, i, b, textarea, button, input, select, figure, figcaption {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    font-style: normal;
+    text-decoration: none;
+    border: none;
+    font-family: "Microsoft Yahei",sans-serif;
+    -webkit-tap-highlight-color:transparent;
+    -webkit-font-smoothing: antialiased;
+    &:focus {
+        outline: none;
+    }
+}
+
+
+body .el-table th.gutter{   // 解决 element-ui 中的表格表头对不齐
+    display: block !important;
+}
+
+
+.el-drawer{
+    width: auto !important;
+    overflow: auto;
+}
+
+// 上传图片的按钮样式
+.avatar-uploader .el-upload {
+    border: 1px dashed #d9d9d9;
+    border-radius: 6px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+.avatar-uploader .el-upload:hover {
+    border-color: #409EFF;
+}
+.avatar-uploader-icon {
+    font-size: 28px;
+    color: #8c939d;
+    width: 160px;
+    height: 160px;
+    line-height: 160px !important;
+    text-align: center;
+}
+.avatar {
+    width: 160px;
+    height: 160px;
+    display: block;
+}
+
