@@ -9,11 +9,11 @@
                 <el-table-column
                     prop="goodsType"
                     label="课程类别"
-                    width="160">
+                    width="250">
                     <template slot-scope="scope">
-                        <el-tag v-if="scope.row.goodsType == 0">不跳转</el-tag>
-                        <el-tag v-else-if="scope.row.goodsType == 1" type="success">跳转单件商品</el-tag>
-                        <el-tag v-else type="warning">推荐课程</el-tag>
+                        <el-tag v-if="scope.row.isHottest">最热课程</el-tag>
+                        <el-tag v-if="scope.row.isLatest" type="success">最新课程</el-tag>
+                        <el-tag v-if="scope.row.isRecommend" type="warning">推荐课程</el-tag>
                     </template>
                 </el-table-column>
                 <el-table-column
@@ -37,12 +37,12 @@
                     label="是否设置为推荐课程"
                     width="150">
                     <template slot-scope="scope">
-                        <el-switch v-model="scope.row.isShow" @change="handleRecommend(scope.row.id)"></el-switch>
+                        <el-switch v-model="scope.row.isRecommend" @change="handleRecommend(scope.row.isRecommend, scope.row.id)"></el-switch>
                     </template>
                 </el-table-column>
                 <el-table-column
                     prop="pictureUrl"
-                    label="图片"
+                    label="课程图片"
                     width="180">
                     <template slot-scope="scope">
                         <img :src="scope.row.pictureUrl" class="picture" alt="暂未设置">
@@ -80,7 +80,7 @@
                     <el-form-item label="视频链接：" prop="videoUrl">
                         <el-input v-model="formData.videoUrl"></el-input>
                     </el-form-item>
-                    <el-form-item label="上传附件" prop="resourceUrlList">
+                    <el-form-item label="上传课程图片" prop="pictureUrl">
                         <el-upload
                             class="avatar-uploader"
                             :action="`${axios.defaults.baseURL}/api/upload/singlePhotoUpload`"
@@ -92,7 +92,7 @@
                             <i v-else class="el-icon-plus avatar-uploader-icon"></i>
                         </el-upload>
                     </el-form-item>
-                    <el-form-item label="上传附件" prop="resourceUrlList">
+                    <el-form-item label="上传附件" prop="resourceUrlList" v-if="!courseId">
                         <el-upload
                             class="upload-demo"
                             :action="`${axios.defaults.baseURL}/api/upload/fileUpload`"
@@ -146,12 +146,6 @@ export default {
         this.fetchCourseList();
     },
     watch: {
-        formVisible(val) {
-            if(val) {
-                Object.keys(this.formData).forEach(key=>{this.formData[key]=''})
-                this.formData.resourceUrlList = []
-            }
-        }
     },
     methods: {
         async fetchCourseList(){    // 获取列表
@@ -164,13 +158,12 @@ export default {
         },
         async handleEdit(id){
             this.courseId = id;
-            console.log(id);
+            // console.log(id);
             let {data: res} = await getCourseDetail(id);
             this.formVisible = true;
             this.$nextTick(() => {
                 console.log(res);
-                // if(res.status ==200)
-                //     this.formData = res.data;
+                if(res.success) this.formData = res.detail;
             })
         },
         handleDelete(id){
@@ -201,27 +194,30 @@ export default {
                 this.$message.error('请将必填项填完后再提交')
                 return
             }
+            console.log('resourceUrlList', this.formData.resourceUrlList);
             let {data: res} = await updateCourse(this.formData);
             if(res.success) this.afterSuccessHandle(res.message)
             else this.$message.error(res.message)
         },
-        async handleRecommend(id){
-            let {data: res} = await putAdShow(id);
+        async handleRecommend(judge, id){
+            let action = judge ? addRecommend : deleteRecommend;
+            let {data: res} = await action(id);
             console.log(res)
-            if(res.status == 200)
+            if(res.success)
                 this.afterSuccessHandle(res.message)
-        },
-        handleAvatarSuccess(res, file) {
-            console.log(res);
-            this.imageUrl = res.imageUrl;
-            console.log(this.imageUrl);
+            else {
+                this.$message.error(res.message)
+                this.fetchCourseList() && (this.formVisible = false);
+            }
+            
         },
         handleChange(file, fileList) {
-            console.log(file);
             this.resourceList = fileList.slice(-3);
             this.resourceList.forEach(item => {
                 if(item.status == 'success') {
+                    if(!this.formData.resourceUrlList) this.formData.resourceUrlList = []
                     this.formData.resourceUrlList.push(item.response.fileUrl);
+                    console.log(this.formData.resourceUrlList);
                     this.$message.success('上传成功')
                 }
             })
