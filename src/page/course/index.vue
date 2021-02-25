@@ -146,6 +146,10 @@ export default {
         this.fetchCourseList();
     },
     watch: {
+        formVisible(val) {
+            if(val) 
+                this.formData.resourceUrlList = [];
+        }
     },
     methods: {
         async fetchCourseList(){    // 获取列表

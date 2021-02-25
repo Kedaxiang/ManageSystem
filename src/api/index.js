@@ -1,7 +1,7 @@
 import axios from 'axios'
 import Vue from 'vue'
 
-const baseUrl = process.env.API_ROOT || ''
+const baseUrl = process.env.API_ROOT || 'http://www.vtmer2018.top:8066'
 axios.defaults.baseURL = baseUrl;
 axios.defaults.withCredentials = true
 
