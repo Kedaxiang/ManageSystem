@@ -66,7 +66,7 @@
                 @current-change="($event) => { pageQuery.page = $event; fetchCourseList()}">
             </el-pagination>
 
-            <el-dialog :title="`${!courseId ? '添加' : '编辑'}课程`" :visible.sync="formVisible" @close="$refs['formData'].resetFields()">
+            <el-dialog :title="`${!courseId ? '添加' : '编辑'}课程`" :visible.sync="formVisible" @close="$refs['formData'].resetFields(); resourceList = []">
                 <el-form :model="formData" ref="formData" label-width="130px">
                     <el-form-item label="课程ID：" prop="id">
                         <el-input v-model="formData.id" :disabled="true"></el-input>
@@ -92,7 +92,7 @@
                             <i v-else class="el-icon-plus avatar-uploader-icon"></i>
                         </el-upload>
                     </el-form-item>
-                    <el-form-item label="上传附件" prop="resourceUrlList" v-if="!courseId">
+                    <el-form-item label="上传附件" prop="resourceUrlList">
                         <el-upload
                             class="upload-demo"
                             :action="`${axios.defaults.baseURL}/api/upload/fileUpload`"
@@ -133,7 +133,7 @@ export default {
                 videoUrl: '',
                 isShow: true,
                 viewCount: '',
-                resourceUrlList: []
+                resourceUrlList: [],
             },
             resourceList: [],
             courseId: null,
@@ -147,8 +147,9 @@ export default {
     },
     watch: {
         formVisible(val) {
-            if(val) 
+            if(val) {
                 this.formData.resourceUrlList = [];
+            }
         }
     },
     methods: {
@@ -162,12 +163,18 @@ export default {
         },
         async handleEdit(id){
             this.courseId = id;
-            // console.log(id);
+            // this.resourceList = [];
             let {data: res} = await getCourseDetail(id);
             this.formVisible = true;
             this.$nextTick(() => {
                 console.log(res);
-                if(res.success) this.formData = res.detail;
+                if(res.success) {
+                    this.formData = res.detail;
+                    if(!res.detail.resourceUrlList) return
+                    res.detail.resourceUrlList.forEach(item => {
+                        this.resourceList.push(JSON.parse(item))
+                    })
+                }
             })
         },
         handleDelete(id){
@@ -188,6 +195,7 @@ export default {
         },
         async handleAdd(){
             let {data: res} = await addCourse(this.formData)
+            console.log(this.formData);
             if(res.success)
                 this.afterSuccessHandle(res.message)
         },
@@ -198,7 +206,7 @@ export default {
                 this.$message.error('请将必填项填完后再提交')
                 return
             }
-            console.log('resourceUrlList', this.formData.resourceUrlList);
+            console.log(this.formData);
             let {data: res} = await updateCourse(this.formData);
             if(res.success) this.afterSuccessHandle(res.message)
             else this.$message.error(res.message)
@@ -213,24 +221,30 @@ export default {
                 this.$message.error(res.message)
                 this.fetchCourseList() && (this.formVisible = false);
             }
-            
+             
         },
         handleChange(file, fileList) {
             this.resourceList = fileList.slice(-3);
-            this.resourceList.forEach(item => {
-                if(item.status == 'success') {
-                    if(!this.formData.resourceUrlList) this.formData.resourceUrlList = []
-                    this.formData.resourceUrlList.push(item.response.fileUrl);
-                    console.log(this.formData.resourceUrlList);
-                    this.$message.success('上传成功')
-                }
-            })
+            if(file.status == 'success') {  
+                if(!this.formData.resourceUrlList) this.formData.resourceUrlList = []
+                console.log(file);
+                this.formData.resourceUrlList.push(JSON.stringify(file))
+                this.$message.success('上传成功')
+            }
         },
         handleRemove(file, fileList) {
             this.resourceList = fileList.slice(-3);
+            let arr = [];
+            let listIndex;
+            this.formData.resourceUrlList.forEach(item => {
+                arr.push(JSON.parse(item))
+            })
             if(file.status == 'success') {
-                let index = this.formData.resourceUrlList.indexOf(file.response.fileUrl)
-                if (index > -1) this.formData.resourceUrlList.splice(index, 1);
+                arr.forEach((item, index) => {
+                    if(item.uid == file.uid) listIndex = index
+                    console.log(listIndex);
+                })
+                if (listIndex > -1) this.formData.resourceUrlList.splice(listIndex, 1);
                 else return
             }
         },
